@@ -1,0 +1,510 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>From Script to Stage | Solo Drama Jeopardy</title>
+<style>
+  :root { --ink:#213c39; --teal:#175e55; --deep:#123d38; --pale:#eaf3ef; --paper:#fbf9f2; --gold:#f0cb78; --line:#c7d8d1; --muted:#49615b; --white:#fffefa; --focus:#9d5100; }
+  * { box-sizing:border-box; }
+  [hidden] { display:none !important; }
+  body { margin:0; background:var(--paper); color:var(--ink); font:17px/1.55 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+  button,input { font:inherit; }
+  button,a,summary,input { -webkit-tap-highlight-color:transparent; }
+  button { cursor:pointer; }
+  button:disabled { cursor:default; }
+  :focus-visible { outline:3px solid var(--focus); outline-offset:4px; }
+  h1,h2,h3,p { margin-top:0; }
+  h1,h2 { line-height:1.15; }
+  h1 { font:normal clamp(2.4rem,6vw,4.3rem)/1.05 Georgia,serif; letter-spacing:-.035em; margin-bottom:18px; }
+  h2 { font:normal 2rem/1.2 Georgia,serif; }
+  h3 { font-size:1.02rem; }
+  a { color:var(--teal); text-underline-offset:3px; }
+  .wrap { max-width:1180px; margin:auto; padding:32px clamp(16px,4vw,44px) 24px; }
+  .eyebrow { font-size:.76rem; font-weight:750; text-transform:uppercase; letter-spacing:.12em; margin-bottom:14px; }
+  .hero { position:relative; overflow:hidden; background:var(--deep); color:var(--white); padding:32px clamp(20px,4vw,44px); border-radius:16px; }
+  .hero:after { content:""; position:absolute; right:-44px; top:-92px; width:320px; height:400px; border:1px solid #567e71; border-radius:50% 50% 0 0; transform:rotate(22deg); pointer-events:none; }
+  .hero > * { position:relative; z-index:1; }
+  .hero p { max-width:690px; }
+  .hero .eyebrow { color:var(--gold); }
+  .hero .intro { font-size:1.08rem; margin-bottom:22px; }
+  .route { display:flex; flex-wrap:wrap; gap:10px; font-size:.83rem; align-items:center; }
+  .route span { border:1px solid #66887e; border-radius:100px; padding:5px 13px; }
+  .route b { color:var(--gold); font-weight:400; }
+  .controls { display:flex; justify-content:space-between; gap:18px; align-items:center; flex-wrap:wrap; margin:22px 0 12px; }
+  .actions { display:flex; flex-wrap:wrap; gap:9px; align-items:center; }
+  .btn { display:inline-flex; align-items:center; justify-content:center; gap:7px; border:1px solid var(--teal); border-radius:7px; background:var(--white); color:var(--teal); padding:10px 15px; font-weight:650; min-height:44px; text-decoration:none; }
+  .btn:hover { background:var(--pale); }
+  .btn.primary { background:var(--teal); color:white; }
+  .btn.primary:hover { background:var(--deep); }
+  .btn:disabled { opacity:.55; }
+  .btn.quiet { border-color:transparent; background:transparent; font-size:.88rem; text-decoration:underline; text-underline-offset:4px; }
+  .status { display:flex; align-items:center; gap:15px; flex-wrap:wrap; }
+  .progress-label { font-size:.9rem; font-weight:650; }
+  progress { display:block; appearance:none; width:150px; max-width:100%; height:6px; border:0; border-radius:4px; margin-top:6px; background:var(--line); }
+  progress::-webkit-progress-bar { background:var(--line); border-radius:4px; }
+  progress::-webkit-progress-value { background:var(--teal); border-radius:4px; }
+  progress::-moz-progress-bar { background:var(--teal); border-radius:4px; }
+  .score { font-variant-numeric:tabular-nums; font-size:1.4rem; font-weight:750; line-height:1.1; }
+  .score small { display:block; font-size:.7rem; font-weight:500; text-transform:uppercase; letter-spacing:.06em; margin-top:3px; }
+  .board { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:10px; margin-top:20px; }
+  .category { min-width:0; display:grid; grid-template-rows:92px repeat(5,76px); gap:9px; }
+  .category h3 { border-top:3px solid var(--gold); display:flex; align-items:center; justify-content:center; text-align:center; background:var(--pale); padding:12px 8px; border-radius:8px 8px 0 0; margin:0; font-size:.96rem; line-height:1.3; }
+  .tile { width:100%; border:1px solid var(--teal); border-radius:7px; background:var(--teal); color:var(--gold); display:flex; flex-direction:column; justify-content:center; align-items:center; font:normal 1.8rem/1.1 Georgia,serif; box-shadow:0 2px 0 var(--deep); transition:background .15s; }
+  .tile:hover { background:var(--deep); }
+  .tile small { font:600 .65rem/1.2 system-ui,sans-serif; margin-top:5px; letter-spacing:.03em; }
+  .tile.done { background:var(--pale); border-color:var(--line); color:var(--ink); box-shadow:none; }
+  .tile.done:hover { background:#d9e9e1; }
+  .tile.reviewed { background:var(--white); color:var(--muted); border-style:dashed; }
+  .legend { font-size:.85rem; color:var(--muted); margin:13px 0 20px; }
+  .help { border-top:1px solid var(--line); border-bottom:1px solid var(--line); margin-top:22px; padding:14px 0; }
+  summary { cursor:pointer; font-weight:650; min-height:32px; }
+  details p,details ul { margin-bottom:10px; }
+  .help .details-body { padding:14px 3px 2px; max-width:780px; }
+  .check { display:flex; align-items:center; gap:9px; font-size:.88rem; width:fit-content; cursor:pointer; }
+  .check input { width:20px; height:20px; accent-color:var(--teal); }
+  .final-card { border:1px solid var(--line); border-radius:12px; padding:23px; margin-top:24px; background:var(--white); display:flex; align-items:center; justify-content:space-between; gap:20px; }
+  .final-card h2 { font-size:1.55rem; margin-bottom:7px; }
+  .final-card p { margin:0; max-width:630px; font-size:.94rem; }
+  .final-card .btn { flex-shrink:0; }
+  footer { margin-top:22px; color:var(--muted); font-size:.77rem; }
+  footer p { margin-bottom:5px; }
+  .storage-warning { border-left:3px solid #9d5100; padding-left:10px; color:var(--ink); }
+  dialog { width:calc(100% - 32px); max-width:760px; max-height:calc(100dvh - 32px); padding:0; border:1px solid var(--line); border-radius:14px; background:var(--white); color:var(--ink); box-shadow:0 16px 80px #082b2b50; overflow:auto; }
+  dialog::backdrop { background:#102d2acc; }
+  .dialog-inner { padding:clamp(20px,4vw,34px); }
+  .dialog-top { display:flex; justify-content:space-between; align-items:start; gap:12px; margin-bottom:18px; }
+  .dialog-top .eyebrow { margin:8px 0 0; color:var(--muted); }
+  .close { background:none; border:1px solid var(--line); border-radius:7px; padding:8px 13px; color:var(--ink); min-height:44px; white-space:nowrap; }
+  .close:hover { background:var(--pale); }
+  .scene { border-left:3px solid #bd9651; padding:14px 18px; background:var(--paper); margin:18px 0; font:1.12rem/1.6 Georgia,serif; white-space:pre-line; }
+  .prompt { font-size:1.08rem; font-weight:650; margin-bottom:16px; }
+  .choices { display:grid; gap:10px; }
+  .choice { display:flex; gap:12px; align-items:start; width:100%; text-align:left; border:1px solid var(--line); border-radius:8px; padding:13px 16px; color:var(--ink); background:white; line-height:1.4; min-height:52px; }
+  .choice:hover:not(:disabled) { background:var(--pale); border-color:var(--teal); }
+  .letter { flex-shrink:0; display:inline-flex; align-items:center; justify-content:center; width:25px; height:25px; border:1px solid var(--line); border-radius:50%; font-size:.78rem; font-weight:750; }
+  .choice.correct { background:var(--pale); border:2px solid var(--teal); padding:12px 15px; }
+  .choice.selected { border:2px solid #987031; padding:12px 15px; }
+  .choice:disabled { opacity:1; }
+  .answer-tag { font-size:.77rem; font-weight:750; display:block; margin-top:4px; }
+  .feedback { background:var(--pale); border-radius:8px; padding:20px; margin-top:20px; }
+  .feedback h3 { font-size:1.1rem; margin-bottom:9px; }
+  .feedback p:last-child { margin-bottom:0; }
+  .followthrough { border-top:1px solid #b5cec3; padding-top:12px; margin-top:14px; }
+  .dialog-bottom { display:flex; flex-wrap:wrap; gap:10px; margin-top:20px; align-items:center; }
+  .hint { color:var(--muted); font-size:.85rem; margin:14px 0 0; }
+  .glossary-grid { display:grid; grid-template-columns:1fr; gap:18px; }
+  .glossary-group { border-top:2px solid var(--line); padding-top:16px; }
+  .glossary-group h3 { color:var(--teal); }
+  dl { margin:0; }
+  dt { font-weight:750; margin-top:12px; }
+  dd { margin:2px 0 0; }
+  .final-steps { padding-left:24px; }
+  .final-steps li { margin-bottom:12px; padding-left:3px; }
+  .example { padding:18px; background:var(--pale); border-radius:8px; margin:15px 0; }
+  .example p:last-child { margin:0; }
+  .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+  .skip { position:absolute; top:-100px; left:16px; background:white; z-index:5; padding:10px; }
+  .skip:focus { top:10px; }
+  @media(max-width:760px) {
+    .board { grid-template-columns:repeat(2,minmax(0,1fr)); gap:20px 12px; }
+    .category { grid-template-rows:64px repeat(5,64px); }
+    .category:last-child { grid-column:1 / -1; grid-template-columns:repeat(5,minmax(0,1fr)); grid-template-rows:auto 70px; }
+    .category:last-child h3 { grid-column:1 / -1; padding:16px; }
+    .hero:after { opacity:.4; }
+    .final-card { align-items:start; flex-direction:column; gap:16px; }
+  }
+  @media(max-width:440px) {
+    .wrap { padding-top:16px; }
+    .hero { padding:26px 20px; }
+    .hero .intro { font-size:1rem; }
+    .route { gap:6px; font-size:.72rem; }
+    .route span { padding:4px 9px; }
+    .controls { align-items:start; }
+    .actions { gap:7px; }
+    .actions .btn { padding:10px 12px; font-size:.9rem; }
+    .board { grid-template-columns:1fr; gap:20px; }
+    .category,.category:last-child { grid-column:auto; grid-template-columns:repeat(5,minmax(0,1fr)); grid-template-rows:auto 68px; gap:6px; }
+    .category h3,.category:last-child h3 { grid-column:1 / -1; padding:13px; justify-content:flex-start; font-size:1rem; }
+    .tile { font-size:1.25rem; }
+    .tile small { font-size:.52rem; }
+    .dialog-top { margin-bottom:12px; }
+    dialog h2 { font-size:1.6rem; }
+    .scene { padding:12px; font-size:1.05rem; }
+  }
+  @media(prefers-reduced-motion:reduce) { * { transition:none !important; scroll-behavior:auto !important; } }
+</style>
+</head>
+<body>
+<a class="skip" href="#board">Skip to the game board</a>
+<main class="wrap">
+  <header class="hero">
+    <p class="eyebrow">Mapping California · Drama practice</p>
+    <h1>From Script to Stage</h1>
+    <p class="intro">A solo Jeopardy-style game about the choices that bring a scene to life. Pick a clue, make a call, and see what the evidence supports.</p>
+    <div class="route" aria-label="Our reading moves: Notice, Name, Interpret"><span>01 &nbsp; Notice</span><b aria-hidden="true">→</b><span>02 &nbsp; Name</span><b aria-hidden="true">→</b><span>03 &nbsp; Interpret</span></div>
+  </header>
+  <section aria-label="Game controls" class="controls">
+    <div class="actions">
+      <button id="random" class="btn primary">Pick a clue for me</button>
+      <button id="glossary-open" class="btn">Drama glossary</button>
+    </div>
+    <div class="status">
+      <div><span class="progress-label" id="progress-label">0 of 25 explored</span><progress id="progress" value="0" max="25" aria-label="Clues explored"></progress></div>
+      <div id="score-wrap" class="score"><span id="score">0</span><small>Practice points</small></div>
+    </div>
+  </section>
+  <details class="help">
+    <summary>How to play</summary>
+    <div class="details-body">
+      <p>Choose any square. Read the situation and select the best-supported answer. You will get an explanation right away. Open a finished square whenever you want to revisit it.</p>
+      <p>Correct first choices earn the square’s points. Other choices cost nothing. The larger values ask you to make finer distinctions. Points are just for your own practice; they do not go to Canvas.</p>
+      <p>No timer, no opponent, no need to finish in one sitting. Start with one category if that is useful. Keep the glossary handy. You do not have to phrase an answer as a question.</p>
+      <label class="check"><input type="checkbox" id="show-score" checked> Show my practice points</label>
+    </div>
+  </details>
+  <h2 class="sr-only">Choose a clue</h2>
+  <section id="board" class="board" aria-label="Jeopardy board: five categories with five clues each" tabindex="-1"></section>
+  <p class="legend">“Got it” marks a correct first choice. “Reviewed” marks a different answer or a clue you chose to reveal. Both count as explored.</p>
+  <section class="final-card" aria-labelledby="final-title">
+    <div><p class="eyebrow" id="final-eyebrow">Put the terms to work</p><h2 id="final-title">One scene. Your interpretation.</h2><p id="final-intro">Try a short scene and turn one performance detail into the beginning of an analytical paragraph.</p></div>
+    <button id="final-open" class="btn">Try the final scene <span aria-hidden="true">→</span></button>
+  </section>
+  <footer>
+    <p>All scenes here are invented for practice. They are not quotations from <i>Real Women Have Curves</i> or descriptions of a particular production.</p>
+    <p id="storage-note">Clue progress and your points preference are saved in this browser when storage is available. The game sends no answers to a server or gradebook.</p>
+    <button id="reset-open" class="btn quiet">Start over</button>
+  </footer>
+  <p id="announcement" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></p>
+  <noscript><p class="storage-warning">This game needs JavaScript. Open the hosted game in a current browser. If you are seeing this inside Canvas, use the “Open the game in a new tab” link above the embed.</p></noscript>
+</main>
+
+<dialog id="clue-dialog" aria-labelledby="clue-heading">
+  <div class="dialog-inner">
+    <div class="dialog-top"><p id="clue-category" class="eyebrow"></p><button class="close" data-close="clue-dialog">Back to board</button></div>
+    <h2 id="clue-heading" tabindex="-1"></h2>
+    <blockquote id="clue-scene" class="scene"></blockquote>
+    <p id="clue-prompt" class="prompt"></p>
+    <div id="choices" class="choices" role="group" aria-labelledby="clue-prompt"></div>
+    <div id="feedback" class="feedback" hidden tabindex="-1" aria-labelledby="feedback-heading">
+      <h3 id="feedback-heading"></h3><p id="explanation"></p><p id="connection" class="followthrough"></p>
+    </div>
+    <div class="dialog-bottom">
+      <button id="reveal" class="btn">Show me and explain</button>
+      <button id="next" class="btn primary" hidden>Next unplayed clue</button>
+      <button id="clue-glossary" class="btn quiet">Check the glossary</button>
+    </div>
+    <p class="hint" id="clue-hint">Choose the answer that best fits the question. Some terms overlap; the explanation will make the distinction.</p>
+  </div>
+</dialog>
+
+<dialog id="glossary-dialog" aria-labelledby="glossary-heading">
+  <div class="dialog-inner">
+    <div class="dialog-top"><p class="eyebrow">A vocabulary for close attention</p><button class="close" data-close="glossary-dialog">Close glossary</button></div>
+    <h2 id="glossary-heading" tabindex="-1">From Script to Stage glossary</h2>
+    <p>These groups give you a place to start. They overlap: blocking can suggest subtext, and a change in vocal delivery can mark a new beat.</p>
+    <div id="glossary-content" class="glossary-grid"></div>
+  </div>
+</dialog>
+
+<dialog id="final-dialog" aria-labelledby="final-heading">
+  <div class="dialog-inner">
+    <div class="dialog-top"><p class="eyebrow">Final scene · No points needed</p><button class="close" data-close="final-dialog">Back to board</button></div>
+    <h2 id="final-heading" tabindex="-1">Make one detail matter.</h2>
+    <p>A fictional community theater in Los Angeles is closing for the night.</p>
+    <blockquote class="scene">SCRIPT: [Mara stands by the exit, keys in hand.]
+    MARA: “Take all the time you need.”
+    ELI: “Then sit with me.”
+
+    PERFORMANCE: Mara rattles the keys and looks at the clock. After Eli speaks, she stops, places the keys on a chair, and sits beside him.</blockquote>
+    <ol class="final-steps">
+      <li><strong>Notice:</strong> Choose one specific action or change. What could you point out to someone watching?</li>
+      <li><strong>Name:</strong> Which term helps you describe it? More than one may fit.</li>
+      <li><strong>Interpret:</strong> What might that choice suggest about what Mara wants, or about her relationship with Eli? Connect your reading to the detail.</li>
+    </ol>
+    <p>Try two or three sentences aloud or in your own notes before opening the example. You are beginning an argument, not hunting for a hidden answer.</p>
+    <details id="final-example">
+      <summary>See one possible reading</summary>
+      <div class="example">
+        <p>Although Mara tells Eli to take his time, her key-rattling gesture suggests that she wants to leave. The beat shifts when she sets the keys down and sits beside him. That change in blocking makes her decision to stay visible, suggesting that Eli’s request matters more to her than the schedule.</p>
+        <p><strong>Another possibility:</strong> Her decision to sit could be reluctant. Her facial expression, pace, and vocal delivery would help us distinguish impatience, concern, and obligation. The actions support an interpretation without settling everything about her motives.</p>
+      </div>
+    </details>
+    <details>
+      <summary>Where does Mapping California enter?</summary>
+      <p>The Los Angeles setting alone does not explain the moment. If the larger play showed why this theater matters to its neighborhood or who can afford to keep it open, that context could deepen your reading. Follow the scene’s evidence before making a claim about California.</p>
+    </details>
+    <div class="dialog-bottom"><button class="btn primary" data-close="final-dialog">Return to the board</button></div>
+  </div>
+</dialog>
+
+<dialog id="reset-dialog" aria-labelledby="reset-heading">
+  <div class="dialog-inner">
+    <h2 id="reset-heading" tabindex="-1">Start a fresh board?</h2>
+    <p>This clears this game’s saved clue progress and points in this browser. It does not change anything in Canvas.</p>
+    <div class="dialog-bottom"><button class="btn primary" data-close="reset-dialog">Keep my progress</button><button id="reset-confirm" class="btn">Clear and start over</button></div>
+  </div>
+</dialog>
+
+<script id="game-data" type="application/json">
+{
+  "version":1,
+  "categories":["On the Page","On the Stage","What Do They Want?","What’s Really Going On?","Director’s Choice"],
+  "glossary":[
+    {"group":"Reading the script","terms":[
+      ["Stage directions","Instructions in a script about setting, movement, delivery, and other features of performance. They are usually distinct from the words characters speak."],
+      ["Dialogue","Spoken exchange between characters."],
+      ["Monologue","A sustained speech by one character. Other characters may be present; it does not necessarily mean the speaker is alone."],
+      ["Scene","A dramatic unit organized around an action, place, or time. A playwright may mark scene divisions explicitly."],
+      ["Setting","The physical and social environment of a work: where and when the action happens, and the conditions surrounding it."]
+    ]},
+    {"group":"Watching the performance","terms":[
+      ["Blocking","Where performers are positioned and how they move through the playing space."],
+      ["Gesture","A physical movement that communicates or suggests meaning, such as an offered hand or a shrug."],
+      ["Vocal delivery","How words are spoken: tone, volume, pace, emphasis, and pauses."],
+      ["Pacing","The rhythm and speed of a scene or performance, including speech, action, pauses, and transitions."],
+      ["Proxemics","How physical distance and spatial relationships between performers contribute to meaning. Proxemics is one way to analyze blocking."]
+    ]},
+    {"group":"Interpreting the scene","terms":[
+      ["Subtext","Meaning, feeling, or intention suggested beneath or beyond the literal words. Infer it from evidence; a gesture has no single universal meaning."],
+      ["Objective","What a character wants to accomplish in a particular moment or scene. The character may try several tactics to get it."],
+      ["Conflict","Competing desires, needs, values, or forces. Conflict may occur between characters, within a character, or between a character and social conditions."],
+      ["Beat","A small unit of dramatic action, often marked by a shift in intention, tactic, emotion, or power. Readers and performers may locate beat changes differently if they can explain their choices."],
+      ["Performance choice","A decision in acting, directing, or design that shapes how audiences understand a script. A choice may fulfill an instruction, develop a suggestion, or add something the script leaves open."]
+    ]}
+  ],
+  "clues":[
+    {"id":"page-100","category":0,"value":100,"title":"The words nobody says","scene":"The script reads: [Lena folds the letter and places it under the cup.]","question":"What is the bracketed instruction?","options":["Dialogue","A stage direction","A monologue","Subtext"],"answer":1,"explanation":"A stage direction tells us something about the action or its performance. Lena does not speak these words. An actor will still decide how to carry out the instruction.","connection":"Close-reading move: notice both the spoken words and the action surrounding them."},
+    {"id":"page-200","category":0,"value":200,"title":"An exchange","scene":"JO: “You kept the key?”\nSAM: “You never asked for it.”\nJO: “I thought I did.”","question":"Which term names this spoken exchange?","options":["Setting","Gesture","Monologue","Dialogue"],"answer":3,"explanation":"These characters speak to one another, so this is dialogue. Their exchange may also contain conflict or subtext, but those terms describe what we infer from it, not the exchange itself.","connection":"Try noticing a repeated word or a question that goes unanswered. Dialogue is language you can close-read."},
+    {"id":"page-300","category":0,"value":300,"title":"One voice holds the room","scene":"For a full page, Noor tells two silent coworkers why she is leaving. Neither coworker speaks during her account.","question":"What is the best term for Noor’s sustained speech?","options":["Monologue","Dialogue","Stage direction","Scene change"],"answer":0,"explanation":"A monologue is an extended speech by one character. It does not require the character to be alone. Here, the silent listeners may strongly affect how the speech lands.","connection":"Interpretive opening: what can a long, uninterrupted speech do that a back-and-forth exchange cannot?"},
+    {"id":"page-400","category":0,"value":400,"title":"A new unit of action","scene":"The script ends a kitchen argument. A new heading reads: “Scene 2. The bus depot. Dawn.”","question":"What does the playwright explicitly begin here?","options":["A new beat within the kitchen argument","A monologue explaining the trip","A new scene","A change in vocal delivery"],"answer":2,"explanation":"The heading marks a new scene, with a change of place and time. A beat is a smaller unit of action; this script explicitly identifies a larger division.","connection":"Ask what the scene break withholds. We do not necessarily get to see everything that happened between the kitchen and the depot."},
+    {"id":"page-500","category":0,"value":500,"title":"More than an address","scene":"A stage direction places a repair shop in Los Angeles during a heat wave. The shop has no air conditioning, and the workers are paid only for completed repairs.","question":"Which description best accounts for the setting?","options":["The repair shop and the objects inside it","Los Angeles and the time of year, apart from the working conditions","The workers’ objective of earning more money","The place, weather, and economic conditions surrounding the action"],"answer":3,"explanation":"Setting includes physical and social conditions. Heat and the payment system could shape the characters’ decisions as much as the city or room does.","connection":"A useful mapping question grows from these details: how do the conditions of this particular place shape what characters can do?"},
+    {"id":"stage-100","category":1,"value":100,"title":"A small movement","scene":"An actor opens her palm toward her scene partner without speaking. Neither performer changes position on the stage.","question":"Which term most specifically names the hand movement?","options":["Pacing","Setting","Gesture","Objective"],"answer":2,"explanation":"The offered palm is a gesture. It might suggest a request, an invitation, or something else. You would need the surrounding action to interpret it.","connection":"First describe the movement. Then explain what it seems to communicate in this scene."},
+    {"id":"stage-200","category":1,"value":200,"title":"Who occupies the doorway?","scene":"As one character approaches the exit, another actor crosses the room and stands in the doorway.","question":"Which term describes the actors’ planned positions and movement through the room?","options":["Blocking","Dialogue","Vocal delivery","Monologue"],"answer":0,"explanation":"Blocking concerns where performers are and how they move. Here, their arrangement could make an attempt to control someone’s departure physically visible.","connection":"The interpretation needs the action: “stands in the doorway” is stronger evidence than “seems controlling” alone."},
+    {"id":"stage-300","category":1,"value":300,"title":"Same sentence, different pressure","scene":"Two actors deliver the same line, “I said she could stay.” One stresses “I.” The other stresses “she.”","question":"What changes most directly between the two versions?","options":["The setting","The scene division","The blocking","The vocal delivery"],"answer":3,"explanation":"Emphasis is part of vocal delivery. Stressing “I” could raise a question about authority; stressing “she” could single out who has permission. Context would help decide.","connection":"Read the line aloud both ways. A change in emphasis can generate a different interpretation without changing a word."},
+    {"id":"stage-400","category":1,"value":400,"title":"The rhythm of an argument","scene":"At first, the actors leave long silences between replies. Later, their lines overlap and their movements become quicker.","question":"Which term best describes the changing rhythm of the scene as a whole?","options":["Monologue","Pacing","Setting","Stage directions"],"answer":1,"explanation":"Pacing includes the rhythm of speech and physical action. Vocal delivery contributes to it, but this example also describes silence, overlap, and movement across the scene.","connection":"Do not stop at “it gets faster.” Explain what the acceleration makes the audience notice or anticipate."},
+    {"id":"stage-500","category":1,"value":500,"title":"Distance does some talking","scene":"At the start of a conversation, two actors sit shoulder to shoulder. After a disagreement, one moves a chair to the opposite end of the table.","question":"How do blocking and proxemics work together here?","options":["Blocking is the chair’s design; proxemics is the dialogue","Blocking names the movement; proxemics focuses attention on the changed distance","Proxemics names the character’s objective; blocking proves that objective","Only proxemics applies because the script does not specify the move"],"answer":1,"explanation":"The chair move is a blocking choice. Proxemics helps us examine the distance it creates. That distance might suggest estrangement, a defensive boundary, or another relation supported by the scene.","connection":"The terms overlap usefully. Name the visible choice, then make a supported claim about the relationship."},
+    {"id":"want-100","category":2,"value":100,"title":"What does she want right now?","scene":"A character keeps asking her supervisor to approve a shift swap. She explains, bargains, and finally offers to cover Saturday.","question":"What is her immediate objective?","options":["To get the supervisor to approve the swap","To sound frustrated","To offer a Saturday shift","To stand near the supervisor"],"answer":0,"explanation":"The objective is what she wants to accomplish: getting the swap approved. Offering to cover Saturday is one tactic she uses to pursue that objective.","connection":"An objective gives you something to track across changing words, gestures, and tactics."},
+    {"id":"want-200","category":2,"value":200,"title":"Two needs, one room","scene":"One roommate needs quiet to rehearse an audition. The other needs to make a work call in the same small room.","question":"What is the clearest source of conflict?","options":["One roommate speaks for longer","The room contains two chairs","Their immediate needs compete for the same space","Their goals are exactly the same"],"answer":2,"explanation":"The conflict grows from competing needs under a shared constraint. Neither person has to be cruel, and neither has to raise their voice for the conflict to matter.","connection":"A small room can do dramatic work. Space makes these otherwise reasonable goals hard to satisfy together."},
+    {"id":"want-300","category":2,"value":300,"title":"New tactic, same goal","scene":"Rae wants a friend to stay. She jokes, then offers dinner, then says quietly, “I don’t want to be alone tonight.”","question":"Which account best distinguishes her objective from her tactics?","options":["Her objective changes each time her tone changes","Her only objective is to make a joke","Dinner is her objective; keeping the friend is her tactic","She pursues the same objective through several tactics"],"answer":3,"explanation":"Rae keeps trying to persuade the friend to stay. Humor, an offer, and a direct appeal are different tactics. A shift in delivery does not automatically mean a new objective.","connection":"This distinction helps you explain how a scene develops instead of just listing its emotional changes."},
+    {"id":"want-400","category":2,"value":400,"title":"Infer from a pattern","scene":"While saying, “It’s your decision,” a character repeatedly slides an unsigned contract toward his partner and points to the signature line.","question":"Which claim about his objective has the clearest support?","options":["He wants to end their partnership permanently","He wants his partner to sign the contract","He wants to hide the contract from his partner","He wants to confess that the contract is invalid"],"answer":1,"explanation":"The repeated actions support the inference that he wants a signature. They do not tell us whether he is dishonest or why the signature matters. Those claims would need more evidence.","connection":"Keep the scale of your claim close to the scale of your evidence."},
+    {"id":"want-500","category":2,"value":500,"title":"Locate a turning point","scene":"A manager dismisses a worker’s request for repairs. The worker stops pleading and places photographs of the broken equipment on the desk. The manager leans forward to look.","question":"Where is the strongest case for a new beat, and why?","options":["When the worker presents the photographs: her tactic changes and the manager’s attention shifts","Only when a new character enters: beats require entrances","Only after the scene ends: a beat is another word for scene","When we learn the room contains a desk: every object creates a beat"],"answer":0,"explanation":"The photographs mark a shift from pleading to presenting evidence, followed by a changed response. That makes this a defensible beat boundary. Another production could emphasize a slightly different turning point.","connection":"A beat is an analytical tool, not a secret punctuation mark everyone must locate identically."},
+    {"id":"subtext-100","category":3,"value":100,"title":"Beneath the sentence","scene":"A character says, “Of course you can borrow it,” while pulling the jacket closer to her chest.","question":"Which term helps you discuss the possible reluctance beneath her permission?","options":["Setting","Monologue","Subtext","Scene"],"answer":2,"explanation":"Subtext is meaning suggested beneath or beyond the literal words. Here, the gesture makes reluctance a reasonable possibility, although the larger scene could complicate that reading.","connection":"Subtext is an inference grounded in details, not a character’s hidden feeling you can simply announce as fact."},
+    {"id":"subtext-200","category":3,"value":200,"title":"Evidence before interpretation","scene":"A student writes, “The performance shows that Dani feels unwelcome.”","question":"Which addition supplies observable evidence for that reading?","options":["Dani seems completely out of place","The other actors stop speaking and turn their chairs away when Dani approaches","The room has an unfriendly atmosphere","Dani is clearly an outsider in this situation"],"answer":1,"explanation":"Stopping speech and turning chairs are actions a viewer can identify. The other options mainly restate the interpretation. Observable details let a reader assess the claim.","connection":"A useful sentence can move from what happens to what that action suggests."},
+    {"id":"subtext-300","category":3,"value":300,"title":"A joke stops working","scene":"Two characters tease each other about a lost ticket. One says, “You always lose things.” The other stops smiling and asks, “What is that supposed to mean?”","question":"Which term helps name the small shift from shared joking to confrontation?","options":["Setting","Monologue","Scene change","Beat"],"answer":3,"explanation":"The change in response suggests a new beat within the same scene. The words and reactions alter the action: the characters are no longer simply playing together.","connection":"Locate the detail that makes you sense a turn. Then explain what changes in the characters’ relationship or tactics."},
+    {"id":"subtext-400","category":3,"value":400,"title":"One gesture, several possibilities","scene":"After hearing a proposal, an actor looks down and says nothing.","question":"Which interpretation is most responsible with only this evidence?","options":["The downward look proves the character is ashamed","Silence means the character has no objective","The pause could suggest hesitation or reflection; surrounding action would help distinguish them","The character has agreed because no objection was spoken"],"answer":2,"explanation":"Silence and a downward look do not have one fixed meaning. Hesitation and reflection are possibilities. You would look at the scene’s context, timing, and other choices before making a stronger claim.","connection":"Precision sometimes means qualifying an interpretation rather than making it sound more certain."},
+    {"id":"subtext-500","category":3,"value":500,"title":"Two readings of a pause","scene":"One reader thinks a long pause before “Yes” shows reluctance. Another thinks the character is deciding to be honest.","question":"What would most help you develop or distinguish these readings?","options":["Compare the lines around the pause and the actor’s delivery, then explain which details each reading accounts for","Choose the reader who knows more drama terms","Count how many seconds the pause lasts and use that number alone","Treat both readings as equally supported because interpretation is personal"],"answer":0,"explanation":"Interpretations can differ, but their support matters. Surrounding dialogue, prior action, delivery, and what follows the pause can strengthen, weaken, or complicate either reading.","connection":"You can acknowledge an alternative without giving up your argument. Explain why your reading better accounts for the evidence you have."},
+    {"id":"director-100","category":4,"value":100,"title":"The page leaves room","scene":"The script says only, “Tess enters.” A director has Tess hesitate in the doorway before she walks in.","question":"What is the added hesitation?","options":["A line of dialogue","A required scene break","The playwright’s stated objective","A performance choice"],"answer":3,"explanation":"The director adds a choice the quoted instruction leaves open. The hesitation may shape how we understand Tess’s entrance, but it is not specified by these words on the page.","connection":"Separate what the script tells you from what this particular performance does with it."},
+    {"id":"director-200","category":4,"value":200,"title":"Specified, with room to decide","scene":"SCRIPT: [Luis whispers.]\nPERFORMANCE: Luis speaks so softly that the other character leans closer.","question":"What is explicitly specified by this script excerpt?","options":["The other character must lean closer","Luis speaks in a whisper","The audience must interpret Luis as afraid","The actors must stand at opposite ends of the stage"],"answer":1,"explanation":"The script specifies whispering. How soft the whisper is, why Luis whispers, and whether the other actor leans in involve further interpretation or performance decisions.","connection":"An instruction can set a condition without settling every detail of a performance."},
+    {"id":"director-300","category":4,"value":300,"title":"Suggested, not instructed","scene":"SCRIPT: “Don’t let them hear us.” There are no stage directions for this line.\nPERFORMANCE: The actor lowers her voice.","question":"How does the performance relate to the excerpt?","options":["The script explicitly commands a whisper","The lowered voice contradicts the line","The dialogue suggests secrecy; lowering the voice develops that suggestion","Vocal delivery cannot be analyzed unless a direction specifies it"],"answer":2,"explanation":"The line supplies a reason to avoid being heard, but it does not prescribe a particular volume. Lowering the voice is a plausible choice; an actor could also try a different delivery for a different effect.","connection":"“Suggested by the script” is different from “required by the script.” Explain the connection rather than erasing the distinction."},
+    {"id":"director-400","category":4,"value":400,"title":"Created in performance","scene":"A scene opens with “A small office.” The script gives no sound instructions. Before the actors speak, the production adds a loud clock ticking.","question":"Which claim stays closest to what this evidence establishes?","options":["The ticking is a production choice that could make waiting or time pressure noticeable","The playwright requires the audience to hear ticking","The clock proves that the manager is cruel","Every production must include the same ticking sound"],"answer":0,"explanation":"The sound is added by this production, based on the information given. It could draw attention to waiting or time pressure. You would connect that possibility to the scene before claiming a particular meaning.","connection":"Design choices belong in performance analysis too. You can ask what a sound makes newly noticeable."},
+    {"id":"director-500","category":4,"value":500,"title":"From a choice to an argument","scene":"In one production, a worker delivers a demand while seated below the supervisor on a platform. In another, they stand at the same level. The dialogue is identical.","question":"Which claim best connects a performance choice to an interpretation?","options":["The first production is faithful because supervisors always stand above workers","The second production removes every form of conflict from the script","Identical dialogue means the two scenes communicate the same relationship","The difference in height may emphasize hierarchy in the first version; equal staging may make the worker’s challenge seem more direct in the second"],"answer":3,"explanation":"The claim identifies a spatial difference and explains possible effects without treating them as automatic. Delivery, movement, and the larger scene could reinforce or complicate the reading.","connection":"This is the beginning of an analytical paragraph: a specific choice, a useful term, and an explanation of what changes for the audience."}
+  ]
+}
+</script>
+<script id="game-app">
+"use strict";
+const DATA = JSON.parse(document.getElementById("game-data").textContent);
+const SAVE_KEY = "c1003-drama-jeopardy-v1";
+function freshState() { return {version:DATA.version,results:{},showScore:true}; }
+function normalizeState(candidate) {
+  const clean = freshState();
+  if (!candidate || candidate.version !== DATA.version) return clean;
+  clean.showScore = candidate.showScore !== false;
+  if (candidate.results && typeof candidate.results === "object") {
+    for (const clue of DATA.clues) {
+      const selected = candidate.results[clue.id];
+      if (Number.isInteger(selected) && selected >= -1 && selected < clue.options.length) clean.results[clue.id] = selected;
+    }
+  }
+  return clean;
+}
+function isDone(state, id) { return Object.prototype.hasOwnProperty.call(state.results,id); }
+function points(state) { return DATA.clues.reduce((sum,clue)=>sum+(isDone(state,clue.id)&&state.results[clue.id]===clue.answer?clue.value:0),0); }
+function recordAnswer(state,clue,selected) {
+  if (isDone(state,clue.id) || !Number.isInteger(selected) || selected < -1 || selected >= clue.options.length) return false;
+  state.results[clue.id]=selected;
+  return true;
+}
+// Interface
+let state = freshState();
+let storageAvailable = true;
+let activeClue = null;
+let boardTrigger = null;
+const returnTargets = new Map();
+const $ = id => document.getElementById(id);
+try {
+  const saved=localStorage.getItem(SAVE_KEY);
+  try { state=normalizeState(JSON.parse(saved)); } catch { state=freshState(); }
+} catch { storageAvailable=false; }
+function save() {
+  try { localStorage.setItem(SAVE_KEY,JSON.stringify(state)); }
+  catch { storageAvailable=false; }
+  if (!storageAvailable) {
+    $("storage-note").textContent="This browser is not saving progress right now. You can still play; keep this tab open to keep your place. The game sends no answers to a server or gradebook.";
+    $("storage-note").classList.add("storage-warning");
+  }
+}
+function announce(text) { $("announcement").textContent=text; }
+function openDialog(id,focusId) {
+  const dialog=$(id);
+  returnTargets.set(id,document.activeElement);
+  dialog.showModal();
+  dialog.scrollTop=0;
+  if (focusId) $(focusId).focus();
+}
+function closeDialog(id) {
+  $(id).close();
+  const target=returnTargets.get(id);
+  if (target && target.isConnected) target.focus();
+}
+document.querySelectorAll("dialog").forEach(dialog=>{
+  dialog.addEventListener("cancel",event=>{event.preventDefault();closeDialog(dialog.id);});
+});
+document.querySelectorAll("[data-close]").forEach(button=>button.addEventListener("click",()=>closeDialog(button.dataset.close)));
+function updateBoard() {
+  const done=Object.keys(state.results).length;
+  $("progress-label").textContent=`${done} of ${DATA.clues.length} explored`;
+  $("progress").value=done;
+  $("score").textContent=points(state).toLocaleString();
+  $("score-wrap").hidden=!state.showScore;
+  $("show-score").checked=state.showScore;
+  $("random").disabled=done===DATA.clues.length;
+  $("random").textContent=done===DATA.clues.length?"Board explored":"Pick a clue for me";
+  for (const clue of DATA.clues) {
+    const button=$(clue.id);
+    const completed=isDone(state,clue.id);
+    const correct=completed&&state.results[clue.id]===clue.answer;
+    button.classList.toggle("done",completed);
+    button.classList.toggle("reviewed",completed&&!correct);
+    button.querySelector("small").textContent=completed?(correct?"Got it":"Reviewed"):"";
+    button.setAttribute("aria-label",`${DATA.categories[clue.category]}, ${clue.value} points${completed?(correct?", got it; open to review":", reviewed; open again"):""}`);
+  }
+  $("final-eyebrow").textContent=done===DATA.clues.length?"All 25 clues explored":"Put the terms to work";
+  $("final-intro").textContent=done===DATA.clues.length?"You have met the terms in action. Now use one detail to begin an interpretation of your own. You can revisit any clue, too.":"Try a short scene and turn one performance detail into the beginning of an analytical paragraph.";
+}
+function buildBoard() {
+  DATA.categories.forEach((name,index)=>{
+    const column=document.createElement("section");
+    column.className="category";
+    column.setAttribute("aria-labelledby",`category-${index}`);
+    const heading=document.createElement("h3");
+    heading.id=`category-${index}`; heading.textContent=name; column.append(heading);
+    DATA.clues.filter(c=>c.category===index).forEach(clue=>{
+      const button=document.createElement("button");
+      button.id=clue.id; button.className="tile";
+      const number=document.createElement("span"); number.textContent=clue.value;
+      const label=document.createElement("small");
+      button.append(number,label);
+      button.addEventListener("click",()=>showClue(clue,button));
+      column.append(button);
+    });
+    $("board").append(column);
+  });
+}
+function populateClue(clue) {
+  activeClue=clue;
+  $("clue-category").textContent=`${DATA.categories[clue.category]} · ${clue.value} points`;
+  $("clue-heading").textContent=clue.title;
+  $("clue-scene").textContent=clue.scene;
+  $("clue-prompt").textContent=clue.question;
+  $("feedback").hidden=true;
+  $("reveal").hidden=false;
+  $("next").hidden=true;
+  $("choices").replaceChildren();
+  clue.options.forEach((option,index)=>{
+    const button=document.createElement("button"); button.className="choice";
+    const letter=document.createElement("span"); letter.className="letter"; letter.textContent=String.fromCharCode(65+index); letter.setAttribute("aria-hidden","true");
+    const text=document.createElement("span"); text.textContent=option;
+    button.append(letter,text);
+    button.addEventListener("click",()=>finishClue(index));
+    $("choices").append(button);
+  });
+  if (isDone(state,clue.id)) renderFeedback(false);
+}
+function showClue(clue,trigger) {
+  boardTrigger=trigger;
+  populateClue(clue);
+  openDialog("clue-dialog","clue-heading");
+  returnTargets.set("clue-dialog",boardTrigger);
+}
+function renderFeedback(justAnswered) {
+  const clue=activeClue;
+  const selected=state.results[clue.id];
+  const correct=selected===clue.answer;
+  Array.from($("choices").children).forEach((button,index)=>{
+    button.disabled=true;
+    button.classList.toggle("correct",index===clue.answer);
+    button.classList.toggle("selected",index===selected&&!correct);
+    if (index===clue.answer || index===selected) {
+      const tag=document.createElement("span"); tag.className="answer-tag";
+      tag.textContent=index===clue.answer?(correct?"Your choice · Best answer":"Best answer"):"Your choice";
+      button.lastElementChild.append(tag);
+    }
+  });
+  $("feedback-heading").textContent=correct?(justAnswered?(state.showScore?`That fits. +${clue.value} practice points`:"That fits."):"Why this answer fits"):(selected===-1?"Here is the distinction":"Let’s look at the distinction");
+  $("explanation").textContent=clue.explanation;
+  $("connection").textContent=clue.connection;
+  $("feedback").hidden=false;
+  $("reveal").hidden=true;
+  $("next").hidden=false;
+  $("next").textContent=DATA.clues.some(c=>!isDone(state,c.id))?"Next unplayed clue":"Try the final scene";
+  if (justAnswered) $("feedback").focus();
+}
+function finishClue(selected) {
+  if (!activeClue || !recordAnswer(state,activeClue,selected)) return;
+  save(); updateBoard(); renderFeedback(true);
+}
+function unplayed() { return DATA.clues.filter(c=>!isDone(state,c.id)); }
+$("random").addEventListener("click",()=>{
+  const remaining=unplayed();
+  if (remaining.length) {
+    const clue=remaining[Math.floor(Math.random()*remaining.length)];
+    showClue(clue,$(clue.id));
+  }
+});
+$("reveal").addEventListener("click",()=>finishClue(-1));
+$("next").addEventListener("click",()=>{
+  const remaining=unplayed();
+  if (!remaining.length) {
+    closeDialog("clue-dialog");
+    openDialog("final-dialog","final-heading");
+    returnTargets.set("final-dialog",$("final-open"));
+    return;
+  }
+  const currentIndex=DATA.clues.findIndex(c=>c.id===activeClue.id);
+  const clue=remaining.find(c=>DATA.clues.indexOf(c)>currentIndex)||remaining[0];
+  boardTrigger=$(clue.id);
+  returnTargets.set("clue-dialog",boardTrigger);
+  populateClue(clue);
+  $("clue-dialog").scrollTop=0;
+  $("clue-heading").focus();
+});
+$("show-score").addEventListener("change",event=>{state.showScore=event.target.checked; save(); updateBoard();});
+$("glossary-open").addEventListener("click",()=>openDialog("glossary-dialog","glossary-heading"));
+$("clue-glossary").addEventListener("click",()=>openDialog("glossary-dialog","glossary-heading"));
+$("final-open").addEventListener("click",()=>openDialog("final-dialog","final-heading"));
+$("reset-open").addEventListener("click",()=>openDialog("reset-dialog"));
+$("reset-confirm").addEventListener("click",()=>{
+  const showScore=state.showScore;
+  state=freshState(); state.showScore=showScore;
+  save(); updateBoard(); closeDialog("reset-dialog");
+  $("final-example").open=false;
+  announce("Your board is ready for a fresh start.");
+});
+for (const group of DATA.glossary) {
+  const section=document.createElement("section"); section.className="glossary-group";
+  const heading=document.createElement("h3"); heading.textContent=group.group;
+  const list=document.createElement("dl");
+  for (const [term,definition] of group.terms) {
+    const dt=document.createElement("dt"); dt.textContent=term;
+    const dd=document.createElement("dd"); dd.textContent=definition;
+    list.append(dt,dd);
+  }
+  section.append(heading,list); $("glossary-content").append(section);
+}
+buildBoard(); updateBoard(); save();
+</script>
+</body>
+</html>
