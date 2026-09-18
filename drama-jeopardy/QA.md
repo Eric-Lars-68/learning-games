@@ -1,3 +1,49 @@
+## Deployment notes
+
+Pipeline: Claude drafts → GitHub stores → Netlify auto-deploys on push →
+iframe embed in a Canvas page.
+
+### Gotchas, in the order they bit
+
+**Netlify team protection is on by default.** A protected site redirects
+every request to `app.netlify.com/edge-access` for a login, so the Canvas
+iframe shows a grey box and the console reports a `frame-ancestors` CSP
+violation plus a 401. The error names `app.netlify.com`, not your site,
+which sends you hunting in the wrong place. Fix: Project configuration →
+Access & security → turn team protection off.
+
+**Test in a browser where you are logged out of Netlify.** Signed in, a
+protected site looks fine and you learn nothing. Students have no Netlify
+account, so the logged-out view is the only true test. Keep a second
+browser for this, or use a private window.
+
+**Canvas keeps `sandbox` and `loading` on the iframe.** Verified — it does
+not strip them. `sandbox="allow-scripts allow-same-origin"` is what lets
+the game write to `localStorage`. Drop `allow-same-origin` and progress
+saving fails silently.
+
+### Setup checklist for the next game
+
+- [ ] `index.html` at the publish root; build command empty, publish
+      directory `.`
+- [ ] Rename the Netlify site before pasting any URL into Canvas —
+      renaming changes the URL
+- [ ] Load the bare Netlify URL and play one clue before touching Canvas
+- [ ] Paste the fragment via the Canvas `</>` HTML editor, not the rich
+      text view
+- [ ] Check the saved page logged out, then in Canvas Student View
+- [ ] Play a clue, reload, confirm the progress counter persisted
+- [ ] Look at it on a phone — the iframe is a fixed 1050px tall
+
+### Known limits
+
+`localStorage` is per browser and per device. A student who starts in a
+lab and finishes on a phone loses the counter. Fine for practice; do not
+use the in-game count as evidence of completion.
+
+### Repo structure for multiple games
+
+One repo, one Netlify site, a folder per game:
 # Local verification: From Script to Stage
 
 Verified September 18, 2026. These are local checks, not evidence of Canvas import or live student access.
